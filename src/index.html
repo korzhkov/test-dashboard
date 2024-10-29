@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dacast Test Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Добавляем анимацию для индикатора загрузки */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div class="flex items-center">
+                <img src="https://www.dacast.com/wp-content/themes/flatsome-child/assets/img/dacast-logo.svg" 
+                     alt="Dacast Logo" 
+                     class="h-8 mr-4">
+                <h1 class="text-3xl font-bold text-gray-800">Test Dashboard</h1>
+            </div>
+            <div class="text-sm text-gray-600">
+                Last Update: <span id="lastUpdate">Never</span>
+            </div>
+        </div>
+
+        <!-- Environment Selection -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Environment</h2>
+            <div class="flex space-x-4">
+                <label class="flex items-center">
+                    <input type="radio" name="environment" class="form-radio text-blue-600" value="dev">
+                    <span class="ml-2">Development</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="environment" class="form-radio text-blue-600" value="test" checked>
+                    <span class="ml-2">Testing</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="environment" class="form-radio text-blue-600" value="prod">
+                    <span class="ml-2">Production</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Test Selection -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Select Tests</h2>
+                <div class="flex items-center space-x-4">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" id="selectAll" class="form-checkbox text-blue-600" checked>
+                        <span class="ml-2">Select All</span>
+                    </label>
+                    <button id="runTests" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center">
+                        <span id="runButtonText">Run Selected Tests</span>
+                        <svg id="loadingSpinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="clean" checked>
+                    <span class="ml-2">Cleaner</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="analytics" checked>
+                    <span class="ml-2">Analytics Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="upload" checked>
+                    <span class="ml-2">Upload Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="playlist" checked>
+                    <span class="ml-2">Playlist Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="expo" checked>
+                    <span class="ml-2">Expo Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="schedule" checked>
+                    <span class="ml-2">Schedule Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="folder" checked>
+                    <span class="ml-2">Folder Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="stream" checked>
+                    <span class="ml-2">Stream Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="vod2live" checked>
+                    <span class="ml-2">VOD2Live Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="trial" checked>
+                    <span class="ml-2">Free Trial Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="chat" checked>
+                    <span class="ml-2">Chat Tests</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Recent Test Results -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Recent Test Results</h2>
+            <div id="testResults" class="space-y-6">
+                <!-- Results will be dynamically inserted here -->
+            </div>
+        </div>
+
+        <!-- Test Details Modal -->
+        <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+            <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold" id="modalTitle">Test Details</h3>
+                    <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="modalContent" class="prose max-w-none">
+                    <!-- Modal content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const testCheckboxes = document.querySelectorAll('.test-checkbox');
+            const runButton = document.getElementById('runTests');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const runButtonText = document.getElementById('runButtonText');
+
+            // Добавляем функцию обновления времени
+            function updateLastUpdateTime() {
+                const lastUpdateElement = document.getElementById('lastUpdate');
+                const now = new Date();
+                lastUpdateElement.textContent = now.toLocaleString();
+            }
+
+            // Обновляем время при загрузке страницы
+            updateLastUpdateTime();
+
+            // Остальные обработчики событий...
+            selectAllCheckbox.addEventListener('change', function() {
+                testCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
+
+            testCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const allChecked = Array.from(testCheckboxes).every(cb => cb.checked);
+                    selectAllCheckbox.checked = allChecked;
+                });
+            });
+
+            // Обновленный обработчик кнопки Run Tests
+            runButton.addEventListener('click', async function() {
+                const selectedTests = Array.from(testCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                if (selectedTests.length === 0) {
+                    alert('Please select at least one test to run');
+                    return;
+                }
+
+                const environment = document.querySelector('input[name="environment"]:checked').value;
+
+                loadingSpinner.classList.remove('hidden');
+                runButtonText.textContent = 'Running Tests...';
+                runButton.disabled = true;
+
+                try {
+                    updateLastUpdateTime(); // Обновляем время при запуске тестов
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    addTestResult({
+                        id: Date.now(),
+                        timestamp: new Date().toISOString(),
+                        environment: environment,
+                        tests: selectedTests,
+                        status: 'passed',
+                        details: 'Test run completed successfully'
+                    });
+
+                    updateLastUpdateTime(); // Обновляем время после получения результатов
+                } catch (error) {
+                    console.error('Error running tests:', error);
+                    updateLastUpdateTime(); // Обновляем время даже в случае ошибки
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                    runButtonText.textContent = 'Run Selected Tests';
+                    runButton.disabled = false;
+                }
+            });
+
+            // Инициализация с примером результата и обновлением времени
+            addTestResult({
+                id: 1,
+                timestamp: '2024-03-20T15:30:00Z',
+                environment: 'test',
+                tests: ['analytics', 'upload'],
+                status: 'passed',
+                details: 'All tests passed successfully'
+            });
+            updateLastUpdateTime();
+        });
+
+        function addTestResult(result) {
+            const resultsContainer = document.getElementById('testResults');
+            const resultElement = document.createElement('div');
+            resultElement.className = 'border rounded-lg p-4';
+            resultElement.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-medium">Run #${result.id} - ${new Date(result.timestamp).toLocaleString()}</h3>
+                    <span class="px-3 py-1 rounded-full text-sm ${
+                        result.status === 'passed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                    }">${result.status.charAt(0).toUpperCase() + result.status.slice(1)}</span>
+                </div>
+                <div class="text-sm text-gray-600 mb-2">
+                    Environment: ${result.environment} | Tests: ${result.tests.join(', ')}
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="showDetails(${result.id})" class="text-blue-600 hover:text-blue-800">View Details</button>
+                    <button onclick="showErrors(${result.id})" class="text-blue-600 hover:text-blue-800">View Errors</button>
+                </div>
+            `;
+
+            // Add to the beginning of the list
+            resultsContainer.insertBefore(resultElement, resultsContainer.firstChild);
+        }
+
+        function showDetails(resultId) {
+            const modal = document.getElementById('detailsModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+
+            modalTitle.textContent = `Test Run #${resultId} Details`;
+            modalContent.innerHTML = `
+                <div class="space-y-4">
+                    <p>Detailed test results will be displayed here...</p>
+                    <pre class="bg-gray-100 p-4 rounded"><code>Test output and logs...</code></pre>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function showErrors(resultId) {
+            const modal = document.getElementById('detailsModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+
+            modalTitle.textContent = `Test Run #${resultId} Errors`;
+            modalContent.innerHTML = `
+                <div class="space-y-4">
+                    <p>Error details will be displayed here...</p>
+                    <pre class="bg-gray-100 p-4 rounded"><code>Error logs and stack traces...</code></pre>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
