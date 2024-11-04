@@ -13,6 +13,36 @@
         .animate-spin {
             animation: spin 1s linear infinite;
         }
+        .result-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #eee;
+        }
+        .results-summary {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .passed { color: #2ecc71; }
+        .failed { color: #e74c3c; }
+        .skipped { color: #f1c40f; }
+        .error {
+            color: #dc3545;
+        }
+        .test-details {
+            margin-top: 1rem;
+        }
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid #ddd;
+        }
+        .test-item.passed { background-color: #d5f5e3; }
+        .test-item.failed { background-color: #fadbd8; }
+        .test-item.skipped { background-color: #fef9e7; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -39,11 +69,11 @@
                     <span class="ml-2">Development</span>
                 </label>
                 <label class="flex items-center">
-                    <input type="radio" name="environment" class="form-radio text-blue-600" value="test" checked>
+                    <input type="radio" name="environment" class="form-radio text-blue-600" value="stage">
                     <span class="ml-2">Testing</span>
                 </label>
                 <label class="flex items-center">
-                    <input type="radio" name="environment" class="form-radio text-blue-600" value="prod">
+                    <input type="radio" name="environment" class="form-radio text-blue-600" value="prod" checked>
                     <span class="ml-2">Production</span>
                 </label>
             </div>
@@ -58,18 +88,20 @@
                         <input type="checkbox" id="selectAll" class="form-checkbox text-blue-600" checked>
                         <span class="ml-2">Select All</span>
                     </label>
-                    <button id="runTests" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center">
+                    <button id="runButton" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center">
                         <span id="runButtonText">Run Selected Tests</span>
-                        <svg id="loadingSpinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                        <div id="loadingSpinner" class="hidden ml-2 h-5 w-5 text-white">
+                            <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
                     </button>
                 </div>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <label class="flex items-center">
-                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="clean" checked>
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="cleaner" checked>
                     <span class="ml-2">Cleaner</span>
                 </label>
                 <label class="flex items-center">
@@ -112,6 +144,15 @@
                     <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="chat" checked>
                     <span class="ml-2">Chat Tests</span>
                 </label>
+                <!-- Добавляем новые тесты -->
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick" checked>
+                    <span class="ml-2">Quick Tests</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick2" checked>
+                    <span class="ml-2">Quick2 Tests</span>
+                </label>
             </div>
         </div>
 
@@ -143,11 +184,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const runButton = document.getElementById('runButton');
+            const runButtonText = document.getElementById('runButtonText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
             const selectAllCheckbox = document.getElementById('selectAll');
             const testCheckboxes = document.querySelectorAll('.test-checkbox');
-            const runButton = document.getElementById('runTests');
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const runButtonText = document.getElementById('runButtonText');
 
             // Добавляем функцию обновления времени
             function updateLastUpdateTime() {
@@ -159,7 +200,7 @@
             // Обновляем время при загрузке страницы
             updateLastUpdateTime();
 
-            // Остальные обработчики событий...
+            // Остальные бработчики событий...
             selectAllCheckbox.addEventListener('change', function() {
                 testCheckboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
@@ -173,7 +214,7 @@
                 });
             });
 
-            // Обновленный обработчик кнопки Run Tests
+            // Обновлены обработчик кнопки Run Tests
             runButton.addEventListener('click', async function() {
                 const selectedTests = Array.from(testCheckboxes)
                     .filter(cb => cb.checked)
@@ -186,35 +227,48 @@
 
                 const environment = document.querySelector('input[name="environment"]:checked').value;
 
-                loadingSpinner.classList.remove('hidden');
-                runButtonText.textContent = 'Running Tests...';
-                runButton.disabled = true;
-
-                try {
-                    updateLastUpdateTime(); // Обновляем время при запуске тестов
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-
+                // Отправляем запрос без спинера
+                fetch('http://localhost:3000/api/tests/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tests: selectedTests,
+                        environment: environment
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    // Добавляем результат о запуске с командой
                     addTestResult({
                         id: Date.now(),
                         timestamp: new Date().toISOString(),
                         environment: environment,
                         tests: selectedTests,
-                        status: 'passed',
-                        details: 'Test run completed successfully'
+                        status: 'started',
+                        details: `Tests started successfully.
+Command: ${result.command}
+Output: ${result.output || 'No output'}`
                     });
+                })
+                .catch(error => {
+                    console.error('Error starting tests:', error);
+                    addTestResult({
+                        id: Date.now(),
+                        timestamp: new Date().toISOString(),
+                        environment: environment,
+                        tests: selectedTests,
+                        status: 'failed to start',
+                        details: error.message
+                    });
+                });
 
-                    updateLastUpdateTime(); // Обновляем время после получения результатов
-                } catch (error) {
-                    console.error('Error running tests:', error);
-                    updateLastUpdateTime(); // Обновляем время даже в случае ошибки
-                } finally {
-                    loadingSpinner.classList.add('hidden');
-                    runButtonText.textContent = 'Run Selected Tests';
-                    runButton.disabled = false;
-                }
+                // Обновляем время
+                updateLastUpdateTime();
             });
 
-            // Инициализация с примером результата и обновлением времени
+            // Инициализация с примером результата и обновлением вемени
             addTestResult({
                 id: 1,
                 timestamp: '2024-03-20T15:30:00Z',
@@ -224,15 +278,79 @@
                 details: 'All tests passed successfully'
             });
             updateLastUpdateTime();
+
+            function fetchAndDisplayResults() {
+                fetch('http://localhost:3000/api/tests/results')
+                    .then(response => response.json())
+                    .then(results => {
+                        console.log('Received results:', results);
+                        const container = document.getElementById('testResults');
+                        
+                        results.sort((a, b) => new Date(b.timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z')) - 
+                                              new Date(a.timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z')));
+                        
+                        container.innerHTML = '';
+                        
+                        results.forEach((result, index) => {
+                            const testNames = [];
+                            let hasFailedTests = false;
+
+                            if (result.results.suites) {
+                                result.results.suites.forEach(suite => {
+                                    if (suite.specs) {
+                                        suite.specs.forEach(spec => {
+                                            testNames.push(spec.title);
+                                            // Проверяем статус каждого теста
+                                            if (spec.tests) {
+                                                spec.tests.forEach(test => {
+                                                    if (test.results) {
+                                                        test.results.forEach(testResult => {
+                                                            if (testResult.status !== 'passed') {
+                                                                hasFailedTests = true;
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                            
+                            addTestResult({
+                                id: results.length - index,
+                                timestamp: result.timestamp,
+                                environment: result.environment,
+                                tests: testNames,
+                                status: hasFailedTests ? 'failed' : 'passed',
+                                details: result.results
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching results:', error);
+                    });
+            }
+
+            fetchAndDisplayResults();
         });
 
         function addTestResult(result) {
             const resultsContainer = document.getElementById('testResults');
             const resultElement = document.createElement('div');
             resultElement.className = 'border rounded-lg p-4';
+            resultElement.dataset.resultId = result.id;
+            resultElement.dataset.details = JSON.stringify(result.details);
+            
+            // Преобразуем формат timestamp в корректную дату
+            const formattedTimestamp = result.timestamp
+                .replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z');
+            
+            const date = new Date(formattedTimestamp);
+            
             resultElement.innerHTML = `
                 <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-medium">Run #${result.id} - ${new Date(result.timestamp).toLocaleString()}</h3>
+                    <h3 class="font-medium">Run #${result.id} - ${date.toLocaleString()}</h3>
                     <span class="px-3 py-1 rounded-full text-sm ${
                         result.status === 'passed' 
                             ? 'bg-green-100 text-green-800' 
@@ -248,39 +366,176 @@
                 </div>
             `;
 
-            // Add to the beginning of the list
-            resultsContainer.insertBefore(resultElement, resultsContainer.firstChild);
+            // Просто добавляем элемент в конец списка
+            resultsContainer.appendChild(resultElement);
         }
 
         function showDetails(resultId) {
             const modal = document.getElementById('detailsModal');
             const modalTitle = document.getElementById('modalTitle');
             const modalContent = document.getElementById('modalContent');
+            
+            const resultElement = document.querySelector(`[data-result-id="${resultId}"]`);
+            const details = JSON.parse(resultElement.dataset.details);
 
             modalTitle.textContent = `Test Run #${resultId} Details`;
-            modalContent.innerHTML = `
-                <div class="space-y-4">
-                    <p>Detailed test results will be displayed here...</p>
-                    <pre class="bg-gray-100 p-4 rounded"><code>Test output and logs...</code></pre>
-                </div>
-            `;
+            
+            let stdoutContent = '';
+            if (details.suites) {
+                details.suites.forEach(suite => {
+                    if (suite.specs) {
+                        suite.specs.forEach(spec => {
+                            if (spec.tests) {
+                                spec.tests.forEach(test => {
+                                    if (test.results) {
+                                        test.results.forEach(result => {
+                                            if (result.stdout && result.stdout.length > 0) {
+                                                stdoutContent += `<div class="mb-4">
+                                                    <h4 class="font-bold mb-2">${spec.title}</h4>
+                                                    <pre class="bg-gray-100 p-4 rounded whitespace-pre-wrap">`;
+                                                
+                                                result.stdout.forEach(output => {
+                                                    stdoutContent += ansiToHtml(output.text);
+                                                });
+                                                
+                                                stdoutContent += '</pre></div>';
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
 
+            modalContent.innerHTML = stdoutContent || '<p>No output available</p>';
             modal.classList.remove('hidden');
+        }
+
+        function ansiToHtml(text) {
+            // Создаем карту соответствия ANSI-кодов и CSS-классов
+            const ansiCodes = {
+                '0': 'ansi-reset',
+                '1': 'ansi-bold',
+                '22': 'ansi-normal',
+                '31': 'ansi-red',
+                '32': 'ansi-green',
+                '33': 'ansi-yellow',
+                '36': 'ansi-cyan',
+                '39': 'ansi-default',
+                '90': 'ansi-gray'
+            };
+
+            // Добавляем CSS-стили для ANSI-кодов
+            const style = document.createElement('style');
+            style.textContent = `
+                .ansi-bold { font-weight: bold; }
+                .ansi-normal { font-weight: normal; }
+                .ansi-red { color: #e74c3c; }
+                .ansi-green { color: #2ecc71; }
+                .ansi-yellow { color: #f1c40f; }
+                .ansi-cyan { color: #00acc1; }
+                .ansi-gray { color: #95a5a6; }
+                .ansi-default { color: inherit; }
+            `;
+            document.head.appendChild(style);
+
+            // Заменяем ANSI-коды на HTML с соответствующими классами
+            let html = text;
+            const regex = /\u001b\[(\d+)m/g;
+            let currentSpan = '';
+            let result = '';
+            let lastIndex = 0;
+
+            for (const match of text.matchAll(regex)) {
+                const code = match[1];
+                const cssClass = ansiCodes[code];
+                
+                if (cssClass === 'ansi-reset') {
+                    // Закрываем все открытые span'ы
+                    result += text.substring(lastIndex, match.index) + '</span>';
+                    currentSpan = '';
+                } else if (cssClass) {
+                    // Закрываем предыдущий span если был и открываем новый
+                    if (currentSpan) {
+                        result += text.substring(lastIndex, match.index) + '</span>';
+                    }
+                    result += `<span class="${cssClass}">`;
+                    currentSpan = cssClass;
+                }
+                lastIndex = match.index + match[0].length;
+            }
+
+            // Добавляем оставшийся текст
+            result += text.substring(lastIndex);
+            if (currentSpan) {
+                result += '</span>';
+            }
+
+            return result;
         }
 
         function showErrors(resultId) {
             const modal = document.getElementById('detailsModal');
             const modalTitle = document.getElementById('modalTitle');
             const modalContent = document.getElementById('modalContent');
+            
+            const resultElement = document.querySelector(`[data-result-id="${resultId}"]`);
+            const details = JSON.parse(resultElement.dataset.details);
 
             modalTitle.textContent = `Test Run #${resultId} Errors`;
-            modalContent.innerHTML = `
-                <div class="space-y-4">
-                    <p>Error details will be displayed here...</p>
-                    <pre class="bg-gray-100 p-4 rounded"><code>Error logs and stack traces...</code></pre>
-                </div>
-            `;
+            
+            let errorContent = '';
+            
+            if (details.suites) {
+                details.suites.forEach(suite => {
+                    if (suite.specs) {
+                        suite.specs.forEach(spec => {
+                            if (spec.tests) {
+                                spec.tests.forEach(test => {
+                                    if (test.results) {
+                                        test.results.forEach(result => {
+                                            if (result.status !== 'passed') {
+                                                errorContent += `
+                                                    <div class="mb-6 p-4 bg-red-50 rounded-lg">
+                                                        <h4 class="font-bold text-red-800 mb-2">${spec.title}</h4>
+                                                        <div class="mb-2">
+                                                            <span class="font-semibold">Status:</span> 
+                                                            <span class="text-red-600">${result.status}</span>
+                                                        </div>`;
+                                                
+                                                if (result.errors) {
+                                                    result.errors.forEach(error => {
+                                                        if (error.location) {
+                                                            errorContent += `
+                                                                <div class="mb-2 font-mono text-sm">
+                                                                    <div class="text-gray-600">
+                                                                        File: ${error.location.file}
+                                                                        Line: ${error.location.line}
+                                                                        Column: ${error.location.column}
+                                                                    </div>
+                                                                </div>`;
+                                                        }
+                                                        errorContent += `
+                                                            <div class="bg-red-100 p-3 rounded font-mono text-sm whitespace-pre-wrap">
+                                                                ${ansiToHtml(error.message)}
+                                                            </div>`;
+                                                    });
+                                                }
+                                                
+                                                errorContent += '</div>';
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
 
+            modalContent.innerHTML = errorContent || '<p class="text-gray-500">No errors found</p>';
             modal.classList.remove('hidden');
         }
 
