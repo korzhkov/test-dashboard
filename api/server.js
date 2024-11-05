@@ -5,12 +5,31 @@ const testsRouter = require('./routes/tests');
 
 const app = express();
 
+// Более гибкая настройка CORS
 const corsOptions = {
-    origin: 'http://15.188.48.63',
+    origin: function (origin, callback) {
+        // Разрешаем запросы без origin (например, от Postman или curl)
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        // Список разрешенных источников
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+            'http://15.188.48.63',
+            'null'  // Для file:// протокола origin будет 'null'
+        ];
+
+        if (allowedOrigins.includes(origin) || origin.startsWith('file://')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    optionsSuccessStatus: 204
+    credentials: true
 };
 
 app.use(cors(corsOptions));
