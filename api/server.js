@@ -5,7 +5,11 @@ const testsRouter = require('./routes/tests');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: ['http://15.188.48.63', 'http://localhost:3000'],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Подключаем роуты
