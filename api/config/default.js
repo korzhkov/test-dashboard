@@ -6,6 +6,6 @@ module.exports = {
     },
     testCommands: {
         windows: 'node runTests2.js',
-        linux: 'xvfb-run node runTests2.js'
+        linux: '. ~/.nvm/nvm.sh && nvm use 16 && xvfb-run node runTests2.js'
     }
 };
