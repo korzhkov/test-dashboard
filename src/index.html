@@ -183,6 +183,10 @@
     </div>
 
     <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api'
+            : '/api';
+
         document.addEventListener('DOMContentLoaded', function() {
             const runButton = document.getElementById('runButton');
             const runButtonText = document.getElementById('runButtonText');
@@ -228,7 +232,7 @@
                 const environment = document.querySelector('input[name="environment"]:checked').value;
 
                 // Отправляем запрос без спинера
-                fetch('http://localhost:3000/api/tests/run', {
+                fetch(`${API_BASE_URL}/tests/run`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -280,7 +284,7 @@ Output: ${result.output || 'No output'}`
             updateLastUpdateTime();
 
             function fetchAndDisplayResults() {
-                fetch('http://localhost:3000/api/tests/results')
+                fetch(`${API_BASE_URL}/tests/results`)
                     .then(response => response.json())
                     .then(results => {
                         console.log('Received results:', results);
