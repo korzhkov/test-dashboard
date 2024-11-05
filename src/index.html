@@ -189,10 +189,9 @@
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
                 return 'http://localhost:3000/api';
             } else if (hostname.includes('file://')) {
-                // Если открыто локально через file://
                 return 'http://localhost:3000/api';
             } else {
-                return '/api';
+                return `http://${hostname}:3000/api`;
             }
         })();
 
@@ -241,7 +240,7 @@
                 const environment = document.querySelector('input[name="environment"]:checked').value;
 
                 // Отправляем запрос без спинера
-                fetch('http://localhost:3000/api/tests/run', {
+                fetch(`${API_BASE_URL}/tests/run`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -293,8 +292,13 @@ Output: ${result.output || 'No output'}`
             updateLastUpdateTime();
 
             function fetchAndDisplayResults() {
-                fetch('http://localhost:3000/api/tests/results')
-                    .then(response => response.json())
+                fetch(`${API_BASE_URL}/tests/results`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(results => {
                         console.log('Received results:', results);
                         const container = document.getElementById('testResults');
