@@ -5,7 +5,9 @@ const testsRouter = require('./routes/tests');
 
 const app = express();
 
-// Более гибкая настройка CORS
+// Определяем платформу
+const isWindows = process.platform === 'win32';
+
 const corsOptions = {
     origin: function (origin, callback) {
         // Разрешаем запросы без origin (например, от Postman или curl)
@@ -13,19 +15,24 @@ const corsOptions = {
             return callback(null, true);
         }
 
-        // Список разрешенных источников
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://15.188.48.63',
-            'null'  // Для file:// протокола origin будет 'null'
-        ];
-
-        if (allowedOrigins.includes(origin) || origin.startsWith('file://')) {
-            callback(null, true);
+        if (isWindows) {
+            // Для Windows разрешаем локальную разработку
+            const allowedOrigins = [
+                'http://localhost:3000',
+                'http://127.0.0.1:3000',
+                'null'  // Для file:// протокола
+            ];
+            if (allowedOrigins.includes(origin) || origin.startsWith('file://')) {
+                return callback(null, true);
+            }
         } else {
-            callback(new Error('Not allowed by CORS'));
+            // Для Linux (сервер) разрешаем только основной домен
+            if (origin === 'http://15.188.48.63') {
+                return callback(null, true);
+            }
         }
+
+        callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -35,10 +42,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Подключаем роуты
 app.use('/api/tests', testsRouter);
 
-// Обработка ошибок
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
