@@ -185,10 +185,14 @@
     <script>
         // Улучшенная версия определения базового URL
         const API_BASE_URL = (() => {
+            // Если открыто через file:// протокол
+            if (window.location.protocol === 'file:') {
+                return 'http://localhost:3000/api';
+            }
+            
+            // Если открыто через http/https
             const hostname = window.location.hostname;
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
-                return 'http://localhost:3000/api';
-            } else if (hostname.includes('file://')) {
                 return 'http://localhost:3000/api';
             } else {
                 return `http://${hostname}:3000/api`;
@@ -294,6 +298,7 @@ Output: ${result.output || 'No output'}`
             function fetchAndDisplayResults() {
                 fetch(`${API_BASE_URL}/tests/results`)
                     .then(response => {
+                        console.log('Response status:', response.status);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
