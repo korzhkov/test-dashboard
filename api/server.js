@@ -50,6 +50,12 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    console.log('Headers:', req.headers);
+    next();
+});
+
 app.use('/api/tests', testsRouter);
 
 app.use((err, req, res, next) => {
