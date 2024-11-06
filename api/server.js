@@ -42,6 +42,14 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Добавляем CORS middleware
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+});
+
 app.use('/api/tests', testsRouter);
 
 app.use((err, req, res, next) => {
@@ -49,7 +57,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
-const PORT = config.port;
-app.listen(PORT, () => {
-    console.log(`API server running on http://localhost:${PORT}`);
+const port = process.env.PORT || 3000;
+app.listen(port, '0.0.0.0', () => {
+    console.log(`API server running on http://0.0.0.0:${port}`);
 });
