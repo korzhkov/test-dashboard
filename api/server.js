@@ -41,7 +41,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-j 
+
 // Добавляем CORS middleware
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
