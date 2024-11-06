@@ -185,18 +185,11 @@
     <script>
         // Улучшенная версия определения базового URL
         const API_BASE_URL = (() => {
-            // Если открыто через file:// протокол
-            if (window.location.protocol === 'file:') {
-                return 'http://localhost:3000/api';
+            // Если открыто через file:// протокол или localhost
+            if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://15.188.48.63:3000/api';  // IP вашего EC2 сервера
             }
-            
-            // Если открыто через http/https
-            const hostname = window.location.hostname;
-            if (hostname === 'localhost' || hostname === '127.0.0.1') {
-                return 'http://localhost:3000/api';
-            } else {
-                return `http://${hostname}:3000/api`;
-            }
+            return `http://${window.location.hostname}:3000/api`;
         })();
 
         document.addEventListener('DOMContentLoaded', function() {
