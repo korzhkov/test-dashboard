@@ -238,6 +238,11 @@
                     checkbox.parentElement.classList.add('opacity-50');
                     checkbox.parentElement.title = 'Quick tests are only available on Windows';
                 });
+
+                // Update select all checkbox state after disabling quick tests
+                selectAllCheckbox.checked = Array.from(testCheckboxes)
+                    .filter(checkbox => !checkbox.value.startsWith('quick'))
+                    .every(checkbox => checkbox.checked);
             }
 
             // Modify Select All handler
