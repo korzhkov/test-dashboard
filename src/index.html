@@ -227,18 +227,26 @@
             // Determine if we're running on Windows
             const isWindows = navigator.platform.toLowerCase().includes('win');
             
-            // Find quick tests
-            const quickTestCheckboxes = document.querySelectorAll('.test-checkbox[value^="quick"]');
-            
-            // If not Windows, make quick tests inactive
-            if (!isWindows) {
-                quickTestCheckboxes.forEach(checkbox => {
-                    checkbox.disabled = true;
-                    checkbox.checked = false;
-                    checkbox.parentElement.classList.add('opacity-50');
-                    checkbox.parentElement.title = 'Quick tests are only available on Windows';
-                });
-            }
+            // Find quick tests and modify their HTML structure
+            const quickTestLabels = document.querySelectorAll('label:has(input[value^="quick"])');
+            quickTestLabels.forEach(label => {
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                const span = label.querySelector('span');
+                
+                // Replace the entire label content
+                label.innerHTML = `
+                    <input type="checkbox" 
+                           class="form-checkbox text-blue-600 test-checkbox" 
+                           value="${checkbox.value}"
+                           ${isWindows ? 'checked' : 'disabled'}
+                    >
+                    <span class="ml-2 ${!isWindows ? 'opacity-50' : ''}">${span.textContent}</span>
+                `;
+                
+                if (!isWindows) {
+                    label.title = 'Quick tests are only available on Windows';
+                }
+            });
 
             // Modify Select All handler
             selectAllCheckbox.addEventListener('change', function() {
