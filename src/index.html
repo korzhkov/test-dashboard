@@ -6,7 +6,7 @@
     <title>Dacast Test Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Add animation for loading indicator - YSK test */
+        /* Добавляем анимацию для индикатора загрузки */
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -146,13 +146,13 @@
                 </label>
                 <!-- Добавляем новые тесты
                 <label class="flex items-center">
-                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick" disabled>
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick" checked>
                     <span class="ml-2">Quick Tests</span>
                 </label>
                 <label class="flex items-center">
-                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick2" disabled>
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick2" checked>
                     <span class="ml-2">Quick2 Tests</span>
-                </label>
+                </label>  -->
             </div>
         </div>
 
@@ -191,20 +191,20 @@
     </div>
 
     <script>
-        // Enhanced version of base URL determination
+        // Улучшенная версия определения базового URL
         const API_BASE_URL = (() => {
-            // Determine if we're running on Windows
+            // Определяем, работаем ли мы на Windows
             const isWindows = navigator.platform.toLowerCase().includes('win');
             
             if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                // Use localhost for Windows
+                // Для Windows используем localhost
                 if (isWindows) {
                     return 'http://localhost:3000/api';
                 }
-                // Use production API for other platforms
+                // Для других платформ используем production API
                 return 'http://15.188.48.63/api';
             }
-            return `/api`; // Use relative path for production
+            return `/api`; // Для production используем относительный путь
         })();
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -214,82 +214,31 @@
             const selectAllCheckbox = document.getElementById('selectAll');
             const testCheckboxes = document.querySelectorAll('.test-checkbox');
 
-            // Add function to update time
+            // Добавляем функцию обновления времени
             function updateLastUpdateTime() {
                 const lastUpdateElement = document.getElementById('lastUpdate');
                 const now = new Date();
                 lastUpdateElement.textContent = now.toLocaleString();
             }
 
-            // Update time on page load
+            // Обновляем время при загрузке страницы
             updateLastUpdateTime();
 
-            // Determine if we're running on Windows
-            const isWindows = navigator.platform.toLowerCase().includes('win');
-            
-            // Find quick tests
-            const quickTests = document.querySelectorAll('input[value^="quick"]');
-            
-            // If not Windows, disable quick tests
-            if (!isWindows) {
-                quickTests.forEach(test => {
-                    test.disabled = true;
-                    test.checked = false;
-                    test.parentElement.classList.add('opacity-50');
-                    test.parentElement.title = 'Quick tests are only available on Windows';
-                });
-            }
-
-            // Update Select All state
-            selectAllCheckbox.checked = Array.from(testCheckboxes)
-                .filter(checkbox => !(!isWindows && checkbox.value.startsWith('quick')))
-                .every(checkbox => checkbox.checked);
-
-            // Determine if we're running on Windows
-            const isWindows = navigator.platform.toLowerCase().includes('win');
-            
-            // Find quick tests and modify their HTML structure
-            const quickTestLabels = document.querySelectorAll('label:has(input[value^="quick"])');
-            quickTestLabels.forEach(label => {
-                const checkbox = label.querySelector('input[type="checkbox"]');
-                const span = label.querySelector('span');
-                
-                // Replace the entire label content
-                label.innerHTML = `
-                    <input type="checkbox" 
-                           class="form-checkbox text-blue-600 test-checkbox" 
-                           value="${checkbox.value}"
-                           ${isWindows ? 'checked' : 'disabled'}
-                    >
-                    <span class="ml-2 ${!isWindows ? 'opacity-50' : ''}">${span.textContent}</span>
-                `;
-                
-                if (!isWindows) {
-                    label.title = 'Quick tests are only available on Windows';
-                }
-            });
-
-            // Modify Select All handler
+            // Остальные бработчики соытий...
             selectAllCheckbox.addEventListener('change', function() {
                 testCheckboxes.forEach(checkbox => {
-                    // Skip disabled checkboxes
-                    if (checkbox.disabled) {
-                        return;
-                    }
                     checkbox.checked = this.checked;
                 });
             });
 
-            // Update Select All state when individual checkboxes change
             testCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
-                    const enabledCheckboxes = Array.from(testCheckboxes).filter(cb => !cb.disabled);
-                    const allChecked = enabledCheckboxes.every(cb => cb.checked);
+                    const allChecked = Array.from(testCheckboxes).every(cb => cb.checked);
                     selectAllCheckbox.checked = allChecked;
                 });
             });
 
-            // Updated Run Tests button handler
+            // Обновлены обработчик кнопки Run Tests
             runButton.addEventListener('click', function() {
                 const selectedTests = Array.from(testCheckboxes)
                     .filter(checkbox => checkbox.checked)
@@ -302,12 +251,12 @@
 
                 const environment = document.querySelector('input[name="environment"]:checked').value;
 
-                // Show loading indicator
+                // Показываем индикатор загрузки
                 runButtonText.textContent = 'Starting Tests...';
                 loadingSpinner.classList.remove('hidden');
                 runButton.disabled = true;
 
-                // Start tests
+                // Запускаем тесты
                 fetch(`${API_BASE_URL}/tests/run`, {
                     method: 'POST',
                     headers: {
@@ -326,14 +275,14 @@
                     console.error('Error starting tests:', error);
                 })
                 .finally(() => {
-                    // Restore button to initial state
+                    // Возвращаем кнопку в исходное состояние
                     runButtonText.textContent = 'Run Selected Tests';
                     loadingSpinner.classList.add('hidden');
                     runButton.disabled = false;
                 });
             });
 
-            // Initialize with example result and time update
+            // Инициализация с примером результата и обновлением вемени
             addTestResult({
                 id: 1,
                 timestamp: '2024-03-20T15:30:00Z',
@@ -358,7 +307,7 @@
                         const container = document.getElementById('testResults');
                         
                         results.sort((a, b) => new Date(b.timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z')) - 
-                                              new Date(a.timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z'));
+                                              new Date(a.timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z')));
                         
                         container.innerHTML = '';
                         
@@ -437,7 +386,7 @@
                 </div>
             `;
 
-            // Simply add the element to the end of the list
+            // Просто добавляем элемнт в конец списка
             resultsContainer.appendChild(resultElement);
         }
 
@@ -485,7 +434,7 @@
         }
 
         function ansiToHtml(text) {
-            // Create ANSI codes to CSS classes mapping
+            // Создаем карту соответствия ANSI-кодов и CSS-классов
             const ansiCodes = {
                 '0': 'ansi-reset',
                 '1': 'ansi-bold',
@@ -498,7 +447,7 @@
                 '90': 'ansi-gray'
             };
 
-            // Add CSS styles for ANSI codes
+            // Добавляем CSS-стили для ANSI-кодов
             const style = document.createElement('style');
             style.textContent = `
                 .ansi-bold { font-weight: bold; }
@@ -512,7 +461,7 @@
             `;
             document.head.appendChild(style);
 
-            // Replace ANSI codes with HTML with corresponding classes
+            // Заменяем ANSI-коды на HTML с соответствующими классами
             let html = text;
             const regex = /\u001b\[(\d+)m/g;
             let currentSpan = '';
@@ -524,11 +473,11 @@
                 const cssClass = ansiCodes[code];
                 
                 if (cssClass === 'ansi-reset') {
-                    // Close all open spans
+                    // Зкрываем все открытые span'ы
                     result += text.substring(lastIndex, match.index) + '</span>';
                     currentSpan = '';
                 } else if (cssClass) {
-                    // Close previous span if exists and open new one
+                    // Закрываем предыдущий span если был и открываем новый
                     if (currentSpan) {
                         result += text.substring(lastIndex, match.index) + '</span>';
                     }
@@ -538,7 +487,7 @@
                 lastIndex = match.index + match[0].length;
             }
 
-            // Add remaining text
+            // Добавляем оставшийся текст
             result += text.substring(lastIndex);
             if (currentSpan) {
                 result += '</span>';
@@ -622,7 +571,7 @@
                     const statusElement = document.getElementById('currentTestStatus');
                     let statusHTML = '';
                     
-                    // Iterate through all environments
+                    // Перебираем все окружения
                     for (const [env, status] of Object.entries(statuses)) {
                         const allTests = Object.entries(status)
                             .filter(([key]) => key !== '_meta');
@@ -637,7 +586,7 @@
                                 second: '2-digit'
                             });
 
-                            // Calculate total execution time
+                            // Вычисляем общее время выполнения
                             const totalTime = Math.round((new Date() - new Date(status._meta.created)) / 1000);
                             const totalTimeFormatted = `${Math.floor(totalTime / 60)}m ${totalTime % 60}s`;
 
@@ -672,18 +621,8 @@
                 });
         }
 
-        // Add periodic status update
+        // Добавляем периодическое обновление статуса
         setInterval(updateTestStatus, 5000);
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const isWindows = navigator.platform.toLowerCase().includes('win');
-            if (isWindows) {
-                document.querySelectorAll('input[value^="quick"]').forEach(checkbox => {
-                    checkbox.disabled = false;
-                    checkbox.checked = true;
-                });
-            }
-        });
     </script>
 </body>
 </html>
