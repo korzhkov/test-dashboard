@@ -227,6 +227,27 @@
             // Determine if we're running on Windows
             const isWindows = navigator.platform.toLowerCase().includes('win');
             
+            // Find quick tests
+            const quickTests = document.querySelectorAll('input[value^="quick"]');
+            
+            // If not Windows, disable quick tests
+            if (!isWindows) {
+                quickTests.forEach(test => {
+                    test.disabled = true;
+                    test.checked = false;
+                    test.parentElement.classList.add('opacity-50');
+                    test.parentElement.title = 'Quick tests are only available on Windows';
+                });
+            }
+
+            // Update Select All state
+            selectAllCheckbox.checked = Array.from(testCheckboxes)
+                .filter(checkbox => !(!isWindows && checkbox.value.startsWith('quick')))
+                .every(checkbox => checkbox.checked);
+
+            // Determine if we're running on Windows
+            const isWindows = navigator.platform.toLowerCase().includes('win');
+            
             // Find quick tests and modify their HTML structure
             const quickTestLabels = document.querySelectorAll('label:has(input[value^="quick"])');
             quickTestLabels.forEach(label => {
@@ -335,7 +356,7 @@
                         const container = document.getElementById('testResults');
                         
                         results.sort((a, b) => new Date(b.timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z')) - 
-                                              new Date(a.timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z')));
+                                              new Date(a.timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z'));
                         
                         container.innerHTML = '';
                         
