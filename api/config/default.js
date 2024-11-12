@@ -6,6 +6,6 @@ module.exports = {
     },
     testCommands: {
         windows: 'node runTests2.js',
-        linux: 'cd /home/ec2-user/autotests/dacast_autotests/ && . ~/.nvm/nvm.sh && nvm use 16 && xvfb-run node runTests2.js'
+        linux: 'cd /home/ec2-user/autotests/dacast_autotests/ && . ~/.nvm/nvm.sh && nvm use 16 && xvfb-run node runTests2.js --sequential &'
     }
 };
