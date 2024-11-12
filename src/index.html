@@ -156,6 +156,14 @@
             </div>
         </div>
 
+        <!-- Current Test Run Status -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Current Test Run</h2>
+            <div id="currentTestStatus">
+                <p class="text-gray-500">No tests currently running</p>
+            </div>
+        </div>
+
         <!-- Recent Test Results -->
         <div class="bg-white rounded-lg shadow-md p-6">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">Recent Test Results</h2>
@@ -185,10 +193,18 @@
     <script>
         // Улучшенная версия определения базового URL
         const API_BASE_URL = (() => {
+            // Определяем, работаем ли мы на Windows
+            const isWindows = navigator.platform.toLowerCase().includes('win');
+            
             if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                return 'http://15.188.48.63/api';  // Убираем порт 3000
+                // Для Windows используем localhost
+                if (isWindows) {
+                    return 'http://localhost:3000/api';
+                }
+                // Для других платформ используем production API
+                return 'http://15.188.48.63/api';
             }
-            return `/api`; // Используем относительный путь
+            return `/api`; // Для production используем относительный путь
         })();
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -208,7 +224,7 @@
             // Обновляем время при загрузке страницы
             updateLastUpdateTime();
 
-            // Остальные бработчики событий...
+            // Остальные бработчики соытий...
             selectAllCheckbox.addEventListener('change', function() {
                 testCheckboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
@@ -223,23 +239,28 @@
             });
 
             // Обновлены обработчик кнопки Run Tests
-            runButton.addEventListener('click', async function() {
+            runButton.addEventListener('click', function() {
                 const selectedTests = Array.from(testCheckboxes)
-                    .filter(cb => cb.checked)
-                    .map(cb => cb.value);
+                    .filter(checkbox => checkbox.checked)
+                    .map(checkbox => checkbox.value);
 
                 if (selectedTests.length === 0) {
-                    alert('Please select at least one test to run');
+                    alert('Please select at least one test');
                     return;
                 }
 
                 const environment = document.querySelector('input[name="environment"]:checked').value;
 
-                // Отправляем запрос без спинера
+                // Показываем индикатор загрузки
+                runButtonText.textContent = 'Starting Tests...';
+                loadingSpinner.classList.remove('hidden');
+                runButton.disabled = true;
+
+                // Запускаем тесты
                 fetch(`${API_BASE_URL}/tests/run`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         tests: selectedTests,
@@ -248,32 +269,17 @@
                 })
                 .then(response => response.json())
                 .then(result => {
-                    // Добавляем результат о запуске с командой
-                    addTestResult({
-                        id: Date.now(),
-                        timestamp: new Date().toISOString(),
-                        environment: environment,
-                        tests: selectedTests,
-                        status: 'started',
-                        details: `Tests started successfully.
-Command: ${result.command}
-Output: ${result.output || 'No output'}`
-                    });
+                    console.log('Tests started:', result);
                 })
                 .catch(error => {
                     console.error('Error starting tests:', error);
-                    addTestResult({
-                        id: Date.now(),
-                        timestamp: new Date().toISOString(),
-                        environment: environment,
-                        tests: selectedTests,
-                        status: 'failed to start',
-                        details: error.message
-                    });
+                })
+                .finally(() => {
+                    // Возвращаем кнопку в исходное состояние
+                    runButtonText.textContent = 'Run Selected Tests';
+                    loadingSpinner.classList.add('hidden');
+                    runButton.disabled = false;
                 });
-
-                // Обновляем время
-                updateLastUpdateTime();
             });
 
             // Инициализация с примером результата и обновлением вемени
@@ -380,7 +386,7 @@ Output: ${result.output || 'No output'}`
                 </div>
             `;
 
-            // Просто добавляем элемент в конец списка
+            // Просто добавляем элемнт в конец списка
             resultsContainer.appendChild(resultElement);
         }
 
@@ -467,7 +473,7 @@ Output: ${result.output || 'No output'}`
                 const cssClass = ansiCodes[code];
                 
                 if (cssClass === 'ansi-reset') {
-                    // Закрываем все открытые span'ы
+                    // Зкрываем все открытые span'ы
                     result += text.substring(lastIndex, match.index) + '</span>';
                     currentSpan = '';
                 } else if (cssClass) {
@@ -556,6 +562,67 @@ Output: ${result.output || 'No output'}`
         function closeModal() {
             document.getElementById('detailsModal').classList.add('hidden');
         }
+
+        function updateTestStatus() {
+            fetch(`${API_BASE_URL}/tests/status`)
+                .then(response => response.json())
+                .then(statuses => {
+                    console.log('Received statuses:', statuses);
+                    const statusElement = document.getElementById('currentTestStatus');
+                    let statusHTML = '';
+                    
+                    // Перебираем все окружения
+                    for (const [env, status] of Object.entries(statuses)) {
+                        const allTests = Object.entries(status)
+                            .filter(([key]) => key !== '_meta');
+                        
+                        const allTestsCompleted = allTests.every(([_, testStatus]) => testStatus.endTime);
+                        const statusAge = Math.round((new Date() - new Date(status._meta.lastUpdate)) / 1000);
+                        
+                        if (allTests.length > 0 && !(allTestsCompleted && statusAge > 30)) {
+                            const lastUpdateTime = new Date(status._meta.lastUpdate).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit'
+                            });
+
+                            // Вычисляем общее время выполнения
+                            const totalTime = Math.round((new Date() - new Date(status._meta.created)) / 1000);
+                            const totalTimeFormatted = `${Math.floor(totalTime / 60)}m ${totalTime % 60}s`;
+
+                            const testStatuses = allTests.map(([testName, testStatus]) => {
+                                if (testStatus.status === 'running' && testStatus.startTime) {
+                                    const duration = Math.round((new Date() - new Date(testStatus.startTime)) / 1000);
+                                    return `${testName} (running ${duration}s)`;
+                                }
+                                return `${testName} (${testStatus.status})`;
+                            });
+
+                            statusHTML += `
+                                <div class="bg-blue-50 p-4 rounded-lg mb-4">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h3 class="font-medium">Tests Status - ${env.toUpperCase()}</h3>
+                                        <span class="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                                            Running (Last update: ${lastUpdateTime}; Total Time: ${totalTimeFormatted})
+                                        </span>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        Tests: ${testStatuses.join(', ')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    statusElement.innerHTML = statusHTML || '<p class="text-gray-500">No tests currently running</p>';
+                })
+                .catch(error => {
+                    console.error('Error fetching test status:', error);
+                });
+        }
+
+        // Добавляем периодическое обновление статуса
+        setInterval(updateTestStatus, 5000);
     </script>
 </body>
 </html>

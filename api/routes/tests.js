@@ -130,4 +130,34 @@ router.get('/results', async (req, res) => {
     }
 });
 
+// GET /api/tests/status
+router.get('/status', async (req, res) => {
+    try {
+        const isWindows = process.platform === 'win32';
+        const testPath = isWindows ? config.testPaths.windows : config.testPaths.linux;
+        const environments = ['prod', 'stage', 'dev'];
+        const statuses = {};
+        
+        // Читаем статусы из всех окружений
+        for (const env of environments) {
+            const statusPath = path.join(testPath, 'results', env, 'test-status.json');
+            
+            try {
+                const exists = await fs.access(statusPath).then(() => true).catch(() => false);
+                if (exists) {
+                    const data = await fs.readFile(statusPath, 'utf8');
+                    statuses[env] = JSON.parse(data);
+                }
+            } catch (err) {
+                console.log(`No status file in ${env} environment`);
+            }
+        }
+        
+        res.json(statuses);
+    } catch (err) {
+        console.error('Error reading status:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
