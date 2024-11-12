@@ -237,6 +237,13 @@
                     checkbox.checked = false;
                     checkbox.parentElement.classList.add('opacity-50');
                     checkbox.parentElement.title = 'Quick tests are only available on Windows';
+                    
+                    // Prevent any changes to quick tests on Linux
+                    checkbox.addEventListener('change', (e) => {
+                        e.preventDefault();
+                        checkbox.checked = false;
+                        return false;
+                    });
                 });
 
                 // Update select all checkbox state after disabling quick tests
