@@ -272,17 +272,19 @@
             // Modify Select All handler
             selectAllCheckbox.addEventListener('change', function() {
                 testCheckboxes.forEach(checkbox => {
-                    // Skip quick tests on Linux
-                    if (!isWindows && checkbox.value.startsWith('quick')) {
+                    // Skip disabled checkboxes
+                    if (checkbox.disabled) {
                         return;
                     }
                     checkbox.checked = this.checked;
                 });
             });
 
+            // Update Select All state when individual checkboxes change
             testCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
-                    const allChecked = Array.from(testCheckboxes).every(cb => cb.checked);
+                    const enabledCheckboxes = Array.from(testCheckboxes).filter(cb => !cb.disabled);
+                    const allChecked = enabledCheckboxes.every(cb => cb.checked);
                     selectAllCheckbox.checked = allChecked;
                 });
             });
