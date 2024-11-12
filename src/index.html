@@ -591,13 +591,30 @@
                             const totalTimeFormatted = `${Math.floor(totalTime / 60)}m ${totalTime % 60}s`;
 
                             const testStatuses = allTests.map(([testName, testStatus]) => {
+                                let statusClass = '';
+                                switch (testStatus.status) {
+                                    case 'failed':
+                                    case 'timed out':
+                                        statusClass = 'text-red-800';
+                                        break;
+                                    case 'passed':
+                                        statusClass = 'text-green-800';
+                                        break;
+                                    case 'pending':
+                                        statusClass = 'text-yellow-800';
+                                        break;
+                                    default:
+                                        statusClass = 'text-gray-600';
+                                }
+
                                 if (testStatus.status === 'running' && testStatus.startTime) {
                                     const duration = Math.round((new Date() - new Date(testStatus.startTime)) / 1000);
-                                    return `${testName} (running ${duration}s)`;
+                                    return `${testName} (<span class="${statusClass}">running ${duration}s</span>)`;
                                 }
-                                return `${testName} (${testStatus.status})`;
+                                return `${testName} (<span class="${statusClass}">${testStatus.status}</span>)`;
                             });
 
+                            // Обновляем HTML с поддержкой цветов
                             statusHTML += `
                                 <div class="bg-blue-50 p-4 rounded-lg mb-4">
                                     <div class="flex justify-between items-center mb-2">
@@ -606,7 +623,7 @@
                                             Running (Last update: ${lastUpdateTime}; Total Time: ${totalTimeFormatted})
                                         </span>
                                     </div>
-                                    <div class="text-sm text-gray-600">
+                                    <div class="text-sm">
                                         Tests: ${testStatuses.join(', ')}
                                     </div>
                                 </div>
