@@ -146,11 +146,11 @@
                 </label>
                 <!-- Add new tests -->
                 <label class="flex items-center">
-                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick" checked>
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick" disabled>
                     <span class="ml-2">Quick Tests</span>
                 </label>
                 <label class="flex items-center">
-                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick2" checked>
+                    <input type="checkbox" class="form-checkbox text-blue-600 test-checkbox" value="quick2" disabled>
                     <span class="ml-2">Quick2 Tests</span>
                 </label>
             </div>
@@ -672,6 +672,16 @@
 
         // Add periodic status update
         setInterval(updateTestStatus, 5000);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const isWindows = navigator.platform.toLowerCase().includes('win');
+            if (isWindows) {
+                document.querySelectorAll('input[value^="quick"]').forEach(checkbox => {
+                    checkbox.disabled = false;
+                    checkbox.checked = true;
+                });
+            }
+        });
     </script>
 </body>
 </html>
