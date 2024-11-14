@@ -6,7 +6,7 @@
     <title>Dacast Test Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Добавляем анимацию для индикатора загрузки */
+        /* Adding animation for loading indicator */
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -251,12 +251,12 @@
 
                 const environment = document.querySelector('input[name="environment"]:checked').value;
 
-                // Показываем индикатор загрузки
+                // Show loading indicator
                 runButtonText.textContent = 'Starting Tests...';
                 loadingSpinner.classList.remove('hidden');
                 runButton.disabled = true;
 
-                // Запускаем тесты
+                // Start tests
                 fetch(`${API_BASE_URL}/tests/run`, {
                     method: 'POST',
                     headers: {
@@ -275,14 +275,14 @@
                     console.error('Error starting tests:', error);
                 })
                 .finally(() => {
-                    // Возвращаем кнопку в исходное состояние
+                    // Return button to initial state
                     runButtonText.textContent = 'Run Selected Tests';
                     loadingSpinner.classList.add('hidden');
                     runButton.disabled = false;
                 });
             });
 
-            // Инициализация с примером результата и обновлением вемени
+            // Initialization with example result and time update
             addTestResult({
                 id: 1,
                 timestamp: '2024-03-20T15:30:00Z',
@@ -362,12 +362,42 @@
             resultElement.dataset.resultId = result.id;
             resultElement.dataset.details = JSON.stringify(result.details);
             
-            // Преобразуем формат timestamp в корректную дату
+            // Convert timestamp format
             const formattedTimestamp = result.timestamp
                 .replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/, 'T$1:$2:$3.$4Z');
             
             const date = new Date(formattedTimestamp);
             
+            // Create formatted list of tests with failed tests highlighted
+            const formattedTests = result.tests.map(testName => {
+                let isTestFailed = false;
+                
+                // Check test status in details
+                if (result.details && result.details.suites) {
+                    result.details.suites.forEach(suite => {
+                        if (suite.specs) {
+                            suite.specs.forEach(spec => {
+                                if (spec.title === testName && spec.tests) {
+                                    spec.tests.forEach(test => {
+                                        if (test.results) {
+                                            test.results.forEach(testResult => {
+                                                if (testResult.status !== 'passed') {
+                                                    isTestFailed = true;
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                return isTestFailed 
+                    ? `<span class="text-red-600">${testName}</span>`
+                    : testName;
+            }).join(', ');
+
             resultElement.innerHTML = `
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-medium">Run #${result.id} - ${date.toLocaleString()}</h3>
@@ -378,7 +408,7 @@
                     }">${result.status.charAt(0).toUpperCase() + result.status.slice(1)}</span>
                 </div>
                 <div class="text-sm text-gray-600 mb-2">
-                    Environment: ${result.environment} | Tests: ${result.tests.join(', ')}
+                    Environment: ${result.environment} | Tests: ${formattedTests}
                 </div>
                 <div class="flex space-x-4">
                     <button onclick="showDetails(${result.id})" class="text-blue-600 hover:text-blue-800">View Details</button>
@@ -386,7 +416,6 @@
                 </div>
             `;
 
-            // Просто добавляем элемнт в конец списка
             resultsContainer.appendChild(resultElement);
         }
 
@@ -434,7 +463,7 @@
         }
 
         function ansiToHtml(text) {
-            // Создаем карту соответствия ANSI-кодов и CSS-классов
+            // Create mapping of ANSI codes to CSS classes
             const ansiCodes = {
                 '0': 'ansi-reset',
                 '1': 'ansi-bold',
@@ -447,7 +476,7 @@
                 '90': 'ansi-gray'
             };
 
-            // Добавляем CSS-стили для ANSI-кодов
+            // Add CSS styles for ANSI codes
             const style = document.createElement('style');
             style.textContent = `
                 .ansi-bold { font-weight: bold; }
@@ -461,7 +490,7 @@
             `;
             document.head.appendChild(style);
 
-            // Заменяем ANSI-коды на HTML с соответствующими классами
+            // Replace ANSI codes with HTML with corresponding classes  
             let html = text;
             const regex = /\u001b\[(\d+)m/g;
             let currentSpan = '';
@@ -473,11 +502,11 @@
                 const cssClass = ansiCodes[code];
                 
                 if (cssClass === 'ansi-reset') {
-                    // Зкрываем все открытые span'ы
+                    // Close all open spans
                     result += text.substring(lastIndex, match.index) + '</span>';
                     currentSpan = '';
                 } else if (cssClass) {
-                    // Закрываем предыдущий span если был и открываем новый
+                    // Close previous span if exists and open new one
                     if (currentSpan) {
                         result += text.substring(lastIndex, match.index) + '</span>';
                     }
@@ -487,7 +516,7 @@
                 lastIndex = match.index + match[0].length;
             }
 
-            // Добавляем оставшийся текст
+            // Add remaining text
             result += text.substring(lastIndex);
             if (currentSpan) {
                 result += '</span>';
@@ -571,7 +600,7 @@
                     const statusElement = document.getElementById('currentTestStatus');
                     let statusHTML = '';
                     
-                    // Перебираем все окружения
+                    // Iterate through all environments
                     for (const [env, status] of Object.entries(statuses)) {
                         const allTests = Object.entries(status)
                             .filter(([key]) => key !== '_meta');
@@ -586,7 +615,7 @@
                                 second: '2-digit'
                             });
 
-                            // Вычисляем общее время выполнения
+                            // Calculate total execution time
                             const totalTime = Math.round((new Date() - new Date(status._meta.created)) / 1000);
                             const totalTimeFormatted = `${Math.floor(totalTime / 60)}m ${totalTime % 60}s`;
 
@@ -614,7 +643,7 @@
                                 return `${testName} (<span class="${statusClass}">${testStatus.status}</span>)`;
                             });
 
-                            // Обновляем HTML с поддержкой цветов
+                            // Update HTML with color support
                             statusHTML += `
                                 <div class="bg-blue-50 p-4 rounded-lg mb-4">
                                     <div class="flex justify-between items-center mb-2">
@@ -638,7 +667,7 @@
                 });
         }
 
-        // Добавляем периодическое обновление статуса
+        // Add periodic status updates
         setInterval(updateTestStatus, 5000);
     </script>
 </body>
