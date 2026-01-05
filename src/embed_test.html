@@ -4,21 +4,313 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Document</title>
+    <title>Dacast Embed Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .embed-container {
+            margin-top: 20px;
+        }
+        .embed-wrapper {
+            margin-bottom: 20px;
+        }
+        .embed-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+    </style>
+    <script>
+        // API base URL
+        const API_BASE_URL = (() => {
+            const isWindows = navigator.platform.toLowerCase().includes('win');
+            if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                if (isWindows) {
+                    return 'http://localhost:3000/api';
+                }
+                return 'http://15.188.48.63/api';
+            }
+            return '/api';
+        })();
+
+        /**
+         * Parse content ID to extract account ID and video ID
+         * Format: accountId-vod-videoId
+         * Example: 8f2facdc-1a29-5903-bffb-8414b3ee5da5-vod-84591ffc-2327-c9ce-3cf1-63dc1c6f69d9
+         */
+        function parseContentId(contentId) {
+            const parts = contentId.split('-vod-');
+            if (parts.length !== 2) {
+                throw new Error('Invalid content ID format. Expected: accountId-vod-videoId');
+            }
+            return {
+                accountId: parts[0],
+                videoId: parts[1],
+                fullContentId: contentId
+            };
+        }
+
+        /**
+         * Fetch signed token from backend API
+         */
+        async function getSignedToken(videoId, expiryMinutes = 2) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/signed-keys/token?videoId=${videoId}&expiryMinutes=${expiryMinutes}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.token;
+            } catch (error) {
+                console.error('Error fetching signed token:', error);
+                return null;
+            }
+        }
+
+        /**
+         * Generate embed codes
+         */
+        async function generateEmbeds() {
+            const contentIdInput = document.getElementById('contentId');
+            const contentId = contentIdInput.value.trim();
+            const useSignedKeys = document.getElementById('useSignedKeys').checked;
+
+            if (!contentId) {
+                alert('Please enter a Content ID');
+                return;
+            }
+
+            try {
+                const { accountId, videoId, fullContentId } = parseContentId(contentId);
+                
+                // Get signed token if needed
+                // Use fullContentId (as in generate_token.js) for token generation
+                let signedToken = null;
+                if (useSignedKeys) {
+                    signedToken = await getSignedToken(fullContentId, 2);
+                    if (!signedToken) {
+                        alert('Failed to get signed token. Embed codes will be generated without protection.');
+                    }
+                }
+
+                // Generate iframe embed
+                const iframeEmbed = generateIframeEmbed(accountId, videoId, signedToken);
+
+                // Display embeds (script embed is created programmatically, not from HTML string)
+                displayEmbeds(fullContentId, signedToken, iframeEmbed);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        /**
+         * Generate script-based embed code
+         */
+        function generateScriptEmbed(contentId, signedToken) {
+            let scriptUrl = 'https://player.dacast.com/js/player.js?contentId=' + contentId;
+            if (signedToken) {
+                scriptUrl += '&signedKey=' + signedToken;
+            }
+            
+            return '<div style="min-height: 270px; min-width: 480px; width: 100%; position: relative; aspect-ratio: 1.78;">' +
+                '<script ' +
+                'id="' + contentId + '" ' +
+                'style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" ' +
+                'src="' + scriptUrl + '" ' +
+                'class="dc-video">' +
+                '</' + 'script>' +
+                '</div>';
+        }
+
+        /**
+         * Generate iframe embed code
+         */
+        function generateIframeEmbed(accountId, videoId, signedToken) {
+            let iframeUrl = 'https://iframe.dacast.com/vod/' + accountId + '/' + videoId;
+            if (signedToken) {
+                iframeUrl += '?signedKey=' + signedToken;
+            }
+            
+            return '<div style="position:relative;padding-bottom:56.25%;overflow:hidden;height:0;max-width:100%;">' +
+                '<iframe ' +
+                'id="' + accountId + '-vod-' + videoId + '" ' +
+                'src="' + iframeUrl + '" ' +
+                'width="100%" ' +
+                'height="100%" ' +
+                'frameborder="0" ' +
+                'scrolling="no" ' +
+                'allow="autoplay;encrypted-media" ' +
+                'allowfullscreen ' +
+                'webkitallowfullscreen ' +
+                'mozallowfullscreen ' +
+                'oallowfullscreen ' +
+                'msallowfullscreen ' +
+                'style="position:absolute;top:0;left:0;">' +
+                '</iframe>' +
+                '</div>';
+        }
+
+        /**
+         * Display generated embed codes
+         */
+        function displayEmbeds(contentId, signedToken, iframeEmbed) {
+            const container = document.getElementById('embedContainer');
+            container.innerHTML = `
+                <div class="embed-wrapper">
+                    <div class="embed-label">Script-based Player:</div>
+                    <div id="scriptEmbedContainer"></div>
+                </div>
+                <div class="embed-wrapper">
+                    <div class="embed-label">Iframe Player:</div>
+                    <div id="iframeEmbedContainer"></div>
+                </div>
+            `;
+
+            // Render script embed - create exactly like working sample
+            const scriptContainer = document.getElementById('scriptEmbedContainer');
+            
+            console.log('=== JS Embed SignedToken ===');
+            console.log('SignedToken for JS embed:', signedToken);
+            
+            // Clear previous content
+            scriptContainer.innerHTML = '';
+            
+            // Build URL with signedKey
+            let scriptUrl = 'https://player.dacast.com/js/player.js?contentId=' + contentId;
+            if (signedToken) {
+                scriptUrl += '&signedKey=' + signedToken;
+            }
+            
+            console.log('Final script URL:', scriptUrl);
+            
+            // Generate HTML code for user to copy (dynamic script creation doesn't work with player.js)
+            const scriptEmbedCode = `<div style="min-height: 270px; min-width: 480px; width: 100%; position: relative; aspect-ratio: 1.78;">
+  <script
+    id="${contentId}"
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+    src="${scriptUrl}"
+    class="dc-video">
+  <\/script>
+</div>`;
+            
+            // Show the code in a textarea for copying
+            scriptContainer.innerHTML = `
+                <div style="margin-bottom: 10px; color: #666; font-size: 12px;">
+                    ⚠️ Script-based embed with signed keys cannot be created dynamically. 
+                    Copy the code below and paste it into your HTML:
+                </div>
+                <textarea readonly style="width: 100%; height: 150px; font-family: monospace; font-size: 11px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">${scriptEmbedCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value.replace(/&lt;/g, '<').replace(/&gt;/g, '>'))" style="margin-top: 5px; padding: 5px 10px; cursor: pointer;">Copy Code</button>
+            `;
+            
+            console.log('Script embed code generated for copying');
+
+            // Render iframe embed
+            const iframeContainer = document.getElementById('iframeEmbedContainer');
+            iframeContainer.innerHTML = iframeEmbed;
+        }
+
+        // Handle Enter key in input field
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentIdInput = document.getElementById('contentId');
+            contentIdInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateEmbeds();
+                }
+            });
+        });
+    </script>
 </head>
 <body>
+    <div class="container">
+        <h1>Dacast Embed Test</h1>
 
-    <h1>Dacast Embed Test</h1>
+        <div class="input-section">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="contentId" 
+                    placeholder="Enter Content ID (e.g., 8f2facdc-1a29-5903-bffb-8414b3ee5da5-vod-84591ffc-2327-c9ce-3cf1-63dc1c6f69d9)"
+                    value="8f2facdc-1a29-5903-bffb-8414b3ee5da5-vod-84591ffc-2327-c9ce-3cf1-63dc1c6f69d9"
+                >
+                <button onclick="generateEmbeds()">Generate Embeds</button>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="useSignedKeys">
+                <label for="useSignedKeys">Use Signed Keys Protection</label>
+            </div>
+        </div>
 
-    <table style="width: 100%;">
-      <tr>
-        <td style="width: 50%; padding: 10px; height: 100px;">
-          <div style="position:relative;padding-bottom:56.25%;overflow:hidden;height:0;max-width:100%;"><iframe id="899dbe88-ed32-ffb6-5fed-68c6c22b2740-vod-f26341d6-9801-1f1b-c26b-29c8c6ae9e66" src="https://iframe-dev.dacast.com/vod/899dbe88-ed32-ffb6-5fed-68c6c22b2740/f26341d6-9801-1f1b-c26b-29c8c6ae9e66?startTime=180" width="100%" height="100%" frameborder="0" scrolling="no" allow="autoplay;encrypted-media" allowfullscreen webkitallowfullscreen mozallowfullscreen oallowfullscreen msallowfullscreen style="position:absolute;top:0;left:0;"></iframe></div>
-        </td>
-        <td style="width: 50%; padding: 10px; height: 100px;">
-        <!--  <div style="padding:75% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/501519239?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;autoplay=1" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" referrerpolicy="strict-origin-when-cross-origin" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="Life-in-The-Shadows _2"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script> -->
-        </td>
-      </tr>
-    </table>
+        <div id="embedContainer" class="embed-container">
+            <!-- Generated embeds will appear here -->
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+YSK TEST
+
+
+<div style="min-height: 270px; min-width: 480px; width: 100%; position: relative; aspect-ratio: 1.78;">
+  <script
+    id="8f2facdc-1a29-5903-bffb-8414b3ee5da5-vod-84591ffc-2327-c9ce-3cf1-63dc1c6f69d9"
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+    src="https://player.dacast.com/js/player.js?contentId=8f2facdc-1a29-5903-bffb-8414b3ee5da5-vod-84591ffc-2327-c9ce-3cf1-63dc1c6f69d9&signedKey=2.20251223211555.70c95fe03c4c72f89d7581a88a449a5e"
+    class="dc-video">
+  </script>
+</div>
+
 </body>
 </html>

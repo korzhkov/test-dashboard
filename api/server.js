@@ -1,7 +1,10 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 const express = require('express');
 const cors = require('cors');
 const config = require('./config/default');
 const testsRouter = require('./routes/tests');
+const signedKeysRouter = require('./routes/signedKeys');
 
 const app = express();
 
@@ -51,12 +54,26 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-    console.log('Headers:', req.headers);
+    // Log only API requests, not static files
+    if (req.path.startsWith('/api')) {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    }
     next();
 });
 
 app.use('/api/tests', testsRouter);
+app.use('/api/signed-keys', signedKeysRouter);
+
+// Serve static files only on Windows (for local development)
+// On Linux, Apache handles static files in production
+if (isWindows) {
+    app.use(express.static(path.resolve(__dirname, '..', 'src')));
+    
+    // Serve index.html as default
+    app.get('/', (req, res) => {
+        res.sendFile(path.resolve(__dirname, '..', 'src', 'index.html'));
+    });
+}
 
 app.use((err, req, res, next) => {
     console.error(err.stack);
