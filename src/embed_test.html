@@ -173,7 +173,7 @@
          * Generate iframe embed code
          */
         function generateIframeEmbed(accountId, videoId, signedToken) {
-            let iframeUrl = 'https://iframe.dacast.com/vod/' + accountId + '/' + videoId;
+            let iframeUrl = 'https://iframe-dev.dacast.com/vod/' + accountId + '/' + videoId;
             if (signedToken) {
                 iframeUrl += '?signedKey=' + signedToken;
             }
